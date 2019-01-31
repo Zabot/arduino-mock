@@ -2,13 +2,18 @@ cmake_minimum_required (VERSION 2.8.8)
 project (arduino_mock)
 
 find_package(Threads REQUIRED)
-add_subdirectory(lib/gtest)
-add_subdirectory(lib/gmock)
 
-message ("building arduino_mock")
-message("Gtest include: ${GTEST_INCLUDE_DIRS}")
-message("Gmock include: ${GMOCK_INCLUDE_DIRS}")
-include_directories(${GTEST_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS} include)
+if (NOT TARGET gmock)
+  set(NO_GMOCK)
+  add_subdirectory(lib/gtest)
+  add_subdirectory(lib/gmock)
+
+  message ("building arduino_mock")
+  message("Gtest include: ${GTEST_INCLUDE_DIRS}")
+  message("Gmock include: ${GMOCK_INCLUDE_DIRS}")
+  include_directories(${GTEST_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS} include)
+endif()
+
 file(GLOB SRC
     "src/ArduinoMockAll.cc"
 )
@@ -19,11 +24,19 @@ target_include_directories(arduino_mock
     PUBLIC "include"
 )
 
-target_link_libraries(arduino_mock
-    ${GTEST_LIBS_DIR}/libgtest.a
-    ${GMOCK_LIBS_DIR}/libgmock.a
-    ${CMAKE_THREAD_LIBS_INIT}
-)
+if (NO_GMOCK)
+  target_link_libraries(arduino_mock
+      ${GTEST_LIBS_DIR}/libgtest.a
+      ${GMOCK_LIBS_DIR}/libgmock.a
+      ${CMAKE_THREAD_LIBS_INIT}
+  )
+else()
+  target_link_libraries(arduino_mock
+      gtest
+      gmock
+      ${CMAKE_THREAD_LIBS_INIT}
+  )
+endif()
 
 set_target_properties( arduino_mock
   PROPERTIES
